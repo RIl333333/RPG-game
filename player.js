@@ -8,3 +8,8 @@ export const player = {
   frameIndex: 0,
   animationTimer: 0
 };
+
+export const inventory = [
+    { name: "ポーション", effect: "heal", amount: 30, count: 3 },
+    { name: "エリクサー", effect: "heal", amount: 100, count: 1 }
+];
