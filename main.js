@@ -2,7 +2,7 @@ import { setIsEvading, startEvadeGame, stopEvadeGame, updateEvadeGame } from "./
 import { inventory, resetPlayer, player } from "./player.js";
 import { showMessage } from "./showmessage.js";
 import { talkToNPC } from "./loadNpcLines.js";
-import { enemyTypesByMap, enemyTypes } from "./enemytypes.js";
+import { enemyTypesByMap, enemyTypes } from "./enemytype.js"
 import { sounds, stopSound, playSound, getLastPlayedSoundID } from "./sound.js";
 import { maps } from "./Maps/mapdata.js";
 import { addDamageText, damageTexts } from "./sentou.js";
