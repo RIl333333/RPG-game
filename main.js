@@ -3,7 +3,7 @@ import { inventory, resetPlayer, player } from "./player.js";
 import { showMessage } from "./showmessage.js";
 import { loadNpcLines } from "./loadNpcLines.js";
 import { enemyTypesByMap, enemyTypes } from "./enemytypes.js";
-import { sounds, stopSound, playSound, getLastPlayedSoundID} from "./sound.js";
+import { sounds, stopSound, playSound, getLastPlayedSoundID } from "./sound.js";
 import { maps } from "./Maps/mapdata.js";
 
 const volumeRange = document.getElementById('volumeRange');
@@ -159,7 +159,7 @@ function startBattle() {
   }
   chooseRandomEnemy(currentMapType, currentMapName);
 
-console.log("選ばれた敵", currentEnemy);
+  console.log("選ばれた敵", currentEnemy);
   document.addEventListener("keydown", battleKeyDownHandler);
   gameState = "battle";
   cancelAnimationFrame(gameLoopId);
@@ -982,15 +982,12 @@ function saveSettings() {
   const ratioX = player.x / currentMap.width;
   const ratioY = player.y / currentMap.height;
 
-  if (!currentMap?.width || !currentMap?.height || currentMap.width <= 0 || currentMap.height <= 0) {
-  console.warn("セーブ時: currentMapのサイズが不正");
-  return;
-}
-  
   volume = parseFloat(volumeRange.value); // ← グローバル変数に代入
 
   const saveData = { ratioX, ratioY, volume };
   localStorage.setItem('playerSettings', JSON.stringify(saveData));
+
+  console.log(`${player.name ?? "プレイヤー"} の位置と音量を保存しました`, 20);
 }
 
 function loadSettings() {
