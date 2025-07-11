@@ -981,7 +981,7 @@ function saveSettings() {
 
   const ratioX = player.x / currentMap.width;
   const ratioY = player.y / currentMap.height;
-  const volume = parseFloat(volumeRange.value);
+  volume = parseFloat(volumeRange.value); // ← グローバル変数に代入
 
   const saveData = { ratioX, ratioY, volume };
   localStorage.setItem('playerSettings', JSON.stringify(saveData));
@@ -994,24 +994,34 @@ function loadSettings() {
   if (saved) {
     try {
       const pos = JSON.parse(saved);
+
+      // 位置復元
       if (
         typeof pos.ratioX === 'number' &&
         typeof pos.ratioY === 'number' &&
         currentMap?.width > 0 &&
         currentMap?.height > 0
       ) {
-        player.x = pos.ratioX * currentMap.width;
-        player.y = pos.ratioY * currentMap.height;
+        const restoredX = pos.ratioX * currentMap.width;
+        const restoredY = pos.ratioY * currentMap.height;
+
+        // コリジョンブロック確認があればここで入れる
+        player.x = restoredX;
+        player.y = restoredY;
         console.log(`${player.name} 位置を復元しました:`, player.x, player.y);
       } else {
         console.warn("保存データの形式が不正またはマップ情報不足:", pos);
       }
-      // 音量設定があるなら復元
+
+      // 音量復元
       if (typeof pos.volume === 'number' && !isNaN(pos.volume)) {
         volume = pos.volume;
         volumeRange.value = volume.toString();
-        // 必要なら音量を即反映させる処理をここに
-        updateAllSoundsVolume(volume);
+        if (typeof updateAllSoundsVolume === 'function') {
+          updateAllSoundsVolume(volume); // ← ここで音量適用
+        } else {
+          console.warn("updateAllSoundsVolume 関数が定義されていません");
+        }
         console.log(`音量を復元しました: ${volume}`);
       }
     } catch (e) {
