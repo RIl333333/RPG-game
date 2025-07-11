@@ -991,8 +991,6 @@ function saveSettings() {
 
   const saveData = { ratioX, ratioY, volume };
   localStorage.setItem('playerSettings', JSON.stringify(saveData));
-
-  showMessage(`${player.name ?? "プレイヤー"} の位置と音量を保存しました`, 20);
 }
 
 function loadSettings() {
