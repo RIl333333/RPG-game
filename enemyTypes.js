@@ -15,7 +15,7 @@ export const enemyTypes = [
   },
   {
     name: "くま",
-    imageSrc: "./Chara/monster3.png",
+    //imageSrc: "./Chara/monster3.png",
     maxHp: 50,
     attack: 5,
     xpReward: 25
