@@ -1,4 +1,4 @@
-import { enemyTypes } from "./enemytypes.js";
+import { enemyTypes } from "./enemyTypes.js";
 import { player } from "./player.js";
 import { currentEnemy, endBattle, setPlayerCanAct, updatePlayerHpText } from "./main.js";
 import { enemyLogicMap } from "./enemyLogic/index.js"; // 追加：敵ごとのロジック集
