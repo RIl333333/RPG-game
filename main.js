@@ -778,7 +778,7 @@ function update() {
   // エンカウント判定部分
   if (moving && gameState === "field") {
     const chance = Math.random();
-    if (chance > 0.1) {
+    if (chance > 0.999) {
       document.getElementById("fieldMessage").innerHTML = '';
 
       // マップごとの敵リストを取得（なければ空配列）
