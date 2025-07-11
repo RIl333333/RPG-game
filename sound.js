@@ -1,9 +1,5 @@
 export const sounds = {
-  attack: new Audio('./sounds/attack.mp3'),
-  enemy_appear: new Audio('./sounds/enemy_appear.mp3'),
   level_up: new Audio('./sounds/level_up.mp3'),
-  hit: new Audio('./sounds/hit.mp3'),
-  victory: new Audio('./sounds/victory.mp3'),
   field_battle1: new Audio('./sounds/field_battle1.mp3'),
   // 必要に応じて追加
 };
