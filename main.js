@@ -981,6 +981,12 @@ function saveSettings() {
 
   const ratioX = player.x / currentMap.width;
   const ratioY = player.y / currentMap.height;
+
+  if (!currentMap?.width || !currentMap?.height || currentMap.width <= 0 || currentMap.height <= 0) {
+  console.warn("セーブ時: currentMapのサイズが不正");
+  return;
+}
+  
   volume = parseFloat(volumeRange.value); // ← グローバル変数に代入
 
   const saveData = { ratioX, ratioY, volume };
