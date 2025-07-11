@@ -5,10 +5,6 @@
     <title>ページタイトル</title>
     <style>
         /* CSSを書くところ */
-        h1 {
-            color: rgba(73, 168, 176, 0.468);
-        }
-
         #frame {
             width: 1366px;
             height: 768px;
@@ -36,7 +32,7 @@
 
         canvas {
             display: block;
-            background-color: #e6d0d0;
+            background-color: #e6d0d000;
             width: 100%;
             height: 100%;
         }
@@ -109,6 +105,20 @@
             z-index: 2;
         }
 
+        #bullet-evade-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 200px;
+            background-color: black;
+            color: white;
+            border: 5px solid white;
+            display: none;
+            z-index: 9999;
+        }
+
         #battleScreen {
             display: none;
             position: absolute;
@@ -116,12 +126,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: black;
             color: white;
-            z-index: 10;
             text-align: center;
             font-size: 20px;
-            /* 文字を大きく */
         }
 
         #battleOptions h2,
@@ -136,8 +144,6 @@
             /* 大きめに */
             height: auto;
             margin-top: 20px;
-            border: 3px solid white;
-            border-radius: 10px;
         }
 
         #battleOptions button {
@@ -161,12 +167,74 @@
             outline: none;
             box-shadow: 0 0 10px #88cc88;
         }
+
+        #battleButtons {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: block;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        /* メッセージはボタン群の上に自然に表示させる */
+        #battleMessage {
+            background-color: transparent;
+            /* 完全透明 */
+            border: 5px solid white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-size: 18px;
+            min-height: 200px;
+            max-width: 80vw;
+            /* 最大幅は画面幅の80% */
+            min-width: 800px;
+            /* 最小幅を設定（お好みで調整） */
+            width: fit-content;
+            /* 内容に応じて幅調整 */
+            text-align: center;
+            margin-top: 100px;
+            /* 下のボタンとの間隔 */
+            margin-left: auto;
+            margin-right: auto;
+            /* 中央寄せ */
+            justify-content: center;
+            align-items: center;
+            height: auto;
+            display: flex;
+            white-space: pre-wrap;
+        }
+
+        #message-field {
+            position: fixed;
+            font-size: 30px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: 5px solid white;
+            padding: 20px;
+            display: none;
+            min-height: 300px;
+            max-width: 80vw;
+            min-width: 800px;
+            /* 最小幅を設定（お好みで調整） */
+            width: fit-content;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 
 <body>
-
-    <h1 id="h2">現在時刻</h1>
     <button id="fullscreenBtn">全画面表示</button>
 
     <div id="frame">
@@ -197,11 +265,13 @@
             style="display: none; position: absolute; top: 100px; left: 100px; background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px;">
             <h2>アイテム</h2>
             <ul id="itemList">
-                <li>ポーション ×3</li>
-                <li>エリクサー ×1</li>
                 <!-- 必要に応じてJSで動的に追加可能 -->
             </ul>
-            <button id="closeItemMenuBtn">閉じる</button>
+        </div>
+
+        <!-- 弾避けミニゲーム用エリア-->
+        <div id="bullet-evade-box">
+            <canvas id="bullet-evade-canvas" width="300" height="200"></canvas>
         </div>
 
         <!-- 🔽🔽 ここに追加する！ -->
@@ -211,25 +281,33 @@
                 <button id="continueGameBtn" style="display: none;">続きから</button>
                 <button id="startGameBtn">はじめから</button>
                 <button id="settingsBtn">設定</button>
+                <label for="volumeRange" id="volumeLabel" style="display:none;">音量:</label>
+                <input type="range" id="volumeRange" min="0" max="1" step="0.01" value="1" style="display:none;">
                 <button id="exitBtn">終了</button>
             </div>
         </div>
+
+        <div id="message-field">
+            <div id="fieldMessage"></div>
+        </div>
+
         <!-- 戦闘画面UI -->
         <div id="battleScreen" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-     background-color: rgba(0, 0, 0, 0.9); color: white; z-index: 10; text-align: center;">
-
-            <h2>バトル開始！</h2>
+     background-color: black; color: white; z-index: 10; text-align: center;">
 
             <div id="battleOptions" style="margin-top: 30px;">
-                <h2 id="enemyName">敵が現れた！</h2>
-                <img id="enemyImage" src="" style="width: 200px; height: auto; margin-top: 20px;" />
-                <p id="enemyHpText">敵HP: 0 / 0</p>
-                <p id="playerHpText">${player.name}HP: 0 / 0</p> <!-- ここを追加 -->
+                <img id="enemyImage" src="" style="width: 200px; height: auto; margin-top: 50px;" />
+                <p id="enemyHpText" style=" height: auto; margin-top: 20px;">敵HP: 0 / 0</p>
+                <p id="playerHpText" style=" height: auto; margin-top: 50px; display: block;">${player.name}HP: 0 / 0
+                </p> <!-- ここを追加 -->
 
-                <button id="attackBtn">攻撃</button>
-                <button id="itemBtn">アイテム</button>
-                <button id="runBtn">逃げる</button>
-                <div id="message"></div>
+                <div id="battleMessage"></div>
+
+                <div id="battleButtons">
+                    <button id="attackBtn">攻撃</button>
+                    <button id="itemBtn">アイテム</button>
+                    <button id="runBtn">逃げる</button>
+                </div>
             </div>
         </div>
 
@@ -237,8 +315,9 @@
     </div>
 
 
-    <script type="module" src="main.js"></script>
     <script type="module" src="Item_Menu.js"></script>
+    <script type="module" src="bullet.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 
 </html>

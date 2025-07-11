@@ -1,4 +1,5 @@
-import { showBattleItemMenu, closeItemMenu, inventory, currentMenu, gameState, setPlayerCanAct , resetKeys, playerCanAct} from "./main.js";
+import { showBattleItemMenu, closeItemMenu, currentMenu, gameState, setPlayerCanAct , resetKeys, playerCanAct} from "./main.js";
+import { inventory } from "./player.js";
 
 const itemList = document.getElementById("itemList");
 let selectedItemIndex = 0;
@@ -27,17 +28,28 @@ if (gameState === "field") {
   });
 }
 
-export function updateItemUI() {
-  itemList.innerHTML = "";
-  inventory.forEach((item, index) => {
+function updateItemUI() {
+  const itemList = document.getElementById("itemList");
+  itemList.innerHTML = ""; // 一旦リセット
+
+  // count が 0 より大きいものだけ表示
+  const visibleItems = inventory.filter(item => item.count > 0);
+
+  visibleItems.forEach((item, index) => {
     const li = document.createElement("li");
-    li.textContent = `${item.name} (${item.count}個)`;
+    li.textContent = `${item.name} ×${item.count}`;
     if (index === selectedItemIndex) {
       li.classList.add("selected-item");
     }
     itemList.appendChild(li);
   });
+
+  // 選択中インデックスが範囲外にならないように調整
+  if (selectedItemIndex >= visibleItems.length) {
+    selectedItemIndex = visibleItems.length - 1;
+  }
 }
+
 
 document.addEventListener("keydown", (e) => {
   if (currentMenu !== "itemMenu") return;
