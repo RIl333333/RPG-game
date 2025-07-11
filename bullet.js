@@ -101,8 +101,6 @@ if (!isInvincible || Math.floor(Date.now() / 100) % 2 === 0) {
       }
     }
   }
-
-  animationFrameId = requestAnimationFrame(updateEvadeGame);
 }
 
 export function spawnEvadeBullet() {
@@ -117,6 +115,7 @@ export function spawnEvadeBullet() {
 }
 
 export function startEvadeGame(onFinishCallback) {
+  setPlayerCanAct(false);
   const evadeBox = document.getElementById("bullet-evade-box");
   if (!evadeBox) {
     console.error("evadeBoxが取得できませんでした");
@@ -155,6 +154,7 @@ export function startEvadeGame(onFinishCallback) {
 }
 
 export function stopEvadeGame() {
+  setPlayerCanAct(true);
   isEvading = false;
   const evadeBox = document.getElementById("bullet-evade-box");
   if (evadeBox) {

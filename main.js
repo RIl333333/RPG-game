@@ -1,10 +1,11 @@
 import { setIsEvading, startEvadeGame, stopEvadeGame, updateEvadeGame } from "./bullet.js";
 import { inventory, resetPlayer, player } from "./player.js";
 import { showMessage } from "./showmessage.js";
-import { loadNpcLines } from "./loadNpcLines.js";
+import { talkToNPC } from "./loadNpcLines.js";
 import { enemyTypesByMap, enemyTypes } from "./enemytypes.js";
 import { sounds, stopSound, playSound, getLastPlayedSoundID } from "./sound.js";
 import { maps } from "./Maps/mapdata.js";
+import { addDamageText, damageTexts } from "./sentou.js";
 
 const volumeRange = document.getElementById('volumeRange');
 
@@ -20,18 +21,6 @@ volumeRange.addEventListener('input', () => {
 let currentMapType = 'field';    // field or dungeon など
 let currentMapName = 'temp';
 
-function waitForEnter() {
-  return new Promise((resolve) => {
-    function onKeyDown(e) {
-      if (e.key === "Enter") {
-        document.removeEventListener("keydown", onKeyDown);
-        setPlayerCanAct(true);
-        resolve();
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-  });
-}
 //volume設定
 const hudSettingsBtn = document.getElementById("settingsBtn");
 const volumeLabel = document.getElementById("volumeLabel");
@@ -41,26 +30,6 @@ hudSettingsBtn.addEventListener("click", () => {
   volumeRange.style.display = isHidden ? "flex" : "none";
   volumeLabel.style.display = isHidden ? "flex" : "none";
 });
-
-async function talkToNPC(npcId) {
-  const npcData = await loadNpcLines(npcId);
-  if (npcData) {
-    for (const line of npcData.lines) {
-      const fullText = `\n${npcData.lines.join("\n")}`;
-      await showMessage(fullText, 20, fieldMessage);
-
-      console.log(`${npcData.name}：${line}`);
-      await waitForEnter();
-
-      const box = document.getElementById("message-field");
-      box.style.display = "none";
-      // 必要ならここでキー入力待ちも追加可能
-    }
-    document.getElementById('menuOverlay').style.display = 'none';
-  } else {
-    showMessage("……（無反応）", 20, fieldMessage);
-  }
-}
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "t" || e.key === "T") {
@@ -164,7 +133,7 @@ function startBattle() {
   gameState = "battle";
   cancelAnimationFrame(gameLoopId);
 
-  document.getElementById("enemyImage").src = currentEnemy.imageSrc;
+  document.getElementById("enemyImage").src = currentEnemy.imageSrc ?? "./Chara/monster1.png";
   document.getElementById("enemyHpText").textContent = `敵HP: ${currentEnemy.hp} / ${currentEnemy.maxHp}`;
   document.getElementById("playerHpText").textContent = `${player.name}HP: ${player.hp} / ${player.maxhp}`;
 
@@ -189,7 +158,6 @@ function enemyTurn() {
     } else {
       stopEvadeGame();
       showMessage("", 0);
-      playerCanAct = true;
       updateSelectedButton();  // メニュー選択復元など
     }
   });
@@ -204,9 +172,10 @@ document.getElementById("attackBtn").addEventListener("click", () => {
   const playerDamage = player.attackdamage;
   currentEnemy.hp -= playerDamage;
   if (currentEnemy.hp < 0) currentEnemy.hp = 0;
-
   document.getElementById("enemyHpText").textContent = `敵HP: ${currentEnemy.hp} / ${currentEnemy.maxHp}`;
-  showMessage(`${player.name}の攻撃！ ${currentEnemy.name}は${playerDamage}ダメージを受けた！`, 20);
+  addDamageText(
+    `${playerDamage}`, "red"
+  );
 
   if (currentEnemy.hp <= 0) {
     gainXp(currentEnemy.xpReward);
@@ -363,6 +332,7 @@ export function updatePlayerHpText() {
 //逃げた
 
 document.getElementById("runBtn").addEventListener("click", () => {
+  if (!playerCanAct) return;
   console.log("逃げた！");
   endBattle();
 });
@@ -413,7 +383,7 @@ directions.forEach(dir => {
 
 const monsterImages = enemyTypes.map(enemy => {
   const img = new Image();
-  img.src = enemy.imageSrc;
+  img.src = enemy.imageSrc ?? "./Chara/monster1.png";
   return { type: enemy, img: img };
 });
 
@@ -444,6 +414,7 @@ player.maxxp = Math.floor((player.lvl ** 2) * 5 + 20);
 // レベルアップをチェックする関数
 function checkLevelUp() {
   while (player.xp >= player.maxxp) {
+    stopSound(getLastPlayedSoundID());
     playSound("level_up");
     player.xp -= player.maxxp;
     player.lvl += 1;
@@ -807,7 +778,7 @@ function update() {
   // エンカウント判定部分
   if (moving && gameState === "field") {
     const chance = Math.random();
-    if (chance > 0.999) {
+    if (chance > 0.1) {
       document.getElementById("fieldMessage").innerHTML = '';
 
       // マップごとの敵リストを取得（なければ空配列）
@@ -936,6 +907,58 @@ function draw() {
   drawCollisionPoints(player.x, player.y);  // ここも必要ならスケール対応
 }
 
+const battleCanvas = document.getElementById('battleCanvas');
+const battleCtx = battleCanvas.getContext('2d');
+
+function drawdamage() {
+  battleCtx.clearRect(0, 0, battleCanvas.width, battleCanvas.height);
+
+  for (let i = damageTexts.length - 1; i >= 0; i--) {
+    const d = damageTexts[i];
+
+    battleCtx.save();
+    battleCtx.globalAlpha = d.alpha;
+    battleCtx.font = "80px Impact, Arial, sans-serif";
+    battleCtx.textAlign = "center";
+
+    // ← 揺れ幅（毎フレーム少しランダムに）
+    const shakeX = (Math.random() - 0.5) * 10;  // -2 ～ +2 の揺れ
+    const shakeY = (Math.random() - 0.5) * 2;  // 垂直方向も少し揺らすと自然
+
+    const drawX = d.x + shakeX;
+    const drawY = d.y - d.dy + shakeY;
+
+    // 影
+    battleCtx.shadowColor = "black";
+    battleCtx.shadowBlur = 10;
+
+    // 枠線でくっきり
+    battleCtx.lineWidth = 4;
+    battleCtx.strokeStyle = "black";
+    battleCtx.strokeText(d.text, drawX, drawY);
+
+    // 本体
+    battleCtx.fillStyle = d.color || "yellow";
+    battleCtx.fillText(d.text, drawX, drawY);
+
+    battleCtx.restore();
+
+    // アニメーション
+    d.y -= d.dy / 4;
+    d.alpha -= 0.01;
+    d.lifetime--;
+
+    if (d.alpha <= 0 || d.lifetime <= 0) {
+      damageTexts.splice(i, 1);
+    }
+  }
+}
+
+
+
+
+
+
 let gameLoopId = null;
 
 function gameLoop() {
@@ -943,12 +966,14 @@ function gameLoop() {
     update();
     draw();
     updateHUD();
-    gameLoopId = requestAnimationFrame(gameLoop);
   } else if (gameState === "battle") {
     updateEvadeGame();
+    drawdamage();
   }
+  gameLoopId = requestAnimationFrame(gameLoop);
 }
 gameLoop();
+
 
 
 // 全画面処理
@@ -987,7 +1012,9 @@ function saveSettings() {
   const saveData = { ratioX, ratioY, volume };
   localStorage.setItem('playerSettings', JSON.stringify(saveData));
 
-  console.log(`${player.name ?? "プレイヤー"} の位置と音量を保存しました`, 20);
+  talkToNPC("savemessage.json").catch(e => {
+    console.error("talkToNPCでエラー:", e);
+  });
 }
 
 function loadSettings() {
@@ -1090,8 +1117,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // メニュー
-document.getElementById('hudSettingsBtn').addEventListener('click', () => {
-});
 document.getElementById('hudExitBtn').addEventListener('click', () => {
   saveSettings();
 });
